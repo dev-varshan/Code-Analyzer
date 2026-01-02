@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import CodeEditor from "./components/CodeEditor";
+import { runRealtimeAnalysis } from "./analysis/runRealtimeAnalysis";
+import { debounce } from "./utils/debounce";
 import "./App.css";
 
 function App() {
@@ -7,15 +9,29 @@ function App() {
 user_input = input()
 eval(user_input)
 `);
+  const [realtimeFindings, setRealtimeFindings] = useState([]);
+
+  const debouncedAnalysis = useMemo(
+    () =>
+      debounce((code) => {
+        const results = runRealtimeAnalysis(code);
+        setRealtimeFindings(results);
+        console.log("Real-time findings:", results);
+      }, 500),
+    []
+  );
+
+  useEffect(() => {
+    debouncedAnalysis(code);
+  }, [code, debouncedAnalysis]);
 
   return (
-    // The #root in CSS handles the main layout now
     <>
       <header className="app-header">
         <h2 className="app-title">Secure Python Code Analyzer</h2>
-        {/* You can add a 'Run' or 'Analyze' button here later */}
+        {/* Run / Analyze button can be added later */}
       </header>
-      
+
       <main className="editor-container">
         <CodeEditor code={code} setCode={setCode} />
       </main>
