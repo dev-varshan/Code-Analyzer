@@ -15,7 +15,7 @@ const FindingsPanel = ({ findings }) => {
 
   return (
     <div style={{ padding: "10px" }}>
-      <h3>⚠️ Real-Time Security Warnings</h3>
+      <h3 style={{ marginBottom: "10px" }}>⚠️ Real-Time Security Warnings</h3>
 
       {findings.map((item, index) => (
         <div
@@ -25,13 +25,18 @@ const FindingsPanel = ({ findings }) => {
             padding: "8px",
             marginBottom: "8px",
             background: "#1e1e1e",
+            wordBreak: "break-word",     // 🔑 responsive text
+            overflowWrap: "anywhere",   // 🔑 responsive text
           }}
         >
           <strong style={{ color: severityColor[item.severity] }}>
             {item.severity}
           </strong>{" "}
-          — {item.name} <br />
-          <small>Line {item.line}: {item.code}</small>
+          — {item.name}
+          <br />
+          <small style={{ color: "#aaa" }}>
+            Line {item.line}: {item.code}
+          </small>
         </div>
       ))}
     </div>
