@@ -8,14 +8,6 @@ export function runFullScan(code) {
   const results = [];
   const lines = code.split("\n");
 
-  // 1️⃣ Re-run realtime rules
-  const realtimeFindings = runRealtimeAnalysis(code);
-  realtimeFindings.forEach((f) =>
-    results.push({
-      ...f,
-      scanType: "realtime",
-    })
-  );
 
   // 2️⃣ Deep scan rules
   const taintedVariables = extractTaintedVariables(lines);
