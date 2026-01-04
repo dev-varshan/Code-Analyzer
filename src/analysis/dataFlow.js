@@ -1,19 +1,31 @@
-export function extractSources(codeLines) {
-  const sources = [];
+// dataFlow.js
 
-  codeLines.forEach((line, index) => {
+export function extractTaintedVariables(codeLines) {
+  const taintedVars = new Set();
+
+  codeLines.forEach((line) => {
+    // Detect direct user input
     if (line.includes("input(")) {
       const variable = line.split("=")[0]?.trim();
       if (variable) {
-        sources.push({
-          variable,
-          line: index + 1,
-        });
+        taintedVars.add(variable);
       }
+    }
+
+    // Detect propagation: tainted variable assigned to another variable
+    const assignmentMatch = line.match(/^(\w+)\s*=\s*(.+)$/);
+    if (assignmentMatch) {
+      const [, leftVar, rightSide] = assignmentMatch;
+
+      taintedVars.forEach((tainted) => {
+        if (rightSide.includes(tainted)) {
+          taintedVars.add(leftVar);
+        }
+      });
     }
   });
 
-  return sources;
+  return Array.from(taintedVars);
 }
 
 export function findSinkUsage(codeLines, sinks) {

@@ -1,6 +1,8 @@
+// runFullScan.js
+
 import { scanRules } from "./scanRules";
 import { runRealtimeAnalysis } from "./runRealtimeAnalysis";
-import { extractSources, findSinkUsage } from "./dataFlow";
+import { extractTaintedVariables, findSinkUsage } from "./dataFlow";
 
 export function runFullScan(code) {
   const results = [];
@@ -8,7 +10,6 @@ export function runFullScan(code) {
 
   // 1️⃣ Re-run realtime rules
   const realtimeFindings = runRealtimeAnalysis(code);
-
   realtimeFindings.forEach((f) =>
     results.push({
       ...f,
@@ -17,14 +18,14 @@ export function runFullScan(code) {
   );
 
   // 2️⃣ Deep scan rules
-  const sources = extractSources(lines);
+  const taintedVariables = extractTaintedVariables(lines);
 
   scanRules.forEach((rule) => {
     const sinkHits = findSinkUsage(lines, rule.sinks);
 
     sinkHits.forEach((hit) => {
-      sources.forEach((source) => {
-        if (lines[hit.line - 1].includes(source.variable)) {
+      taintedVariables.forEach((taintedVar) => {
+        if (hit.code.includes(taintedVar)) {
           results.push({
             ruleId: rule.id,
             name: rule.name,
