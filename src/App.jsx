@@ -54,7 +54,6 @@ eval(user_input)
     const rect = containerRef.current.getBoundingClientRect();
     const newEditorWidth = ((e.clientX - rect.left) / rect.width) * 100;
 
-    // Limit resize (prevent collapse)
     if (newEditorWidth > 40 && newEditorWidth < 85) {
       setEditorWidth(newEditorWidth);
     }
@@ -75,12 +74,10 @@ eval(user_input)
 
   return (
     <>
-      {/* Header unchanged */}
       <header className="app-header">
         <h2 className="app-title">Secure Python Code Analyzer</h2>
       </header>
 
-      {/* Main Layout */}
       <main
         ref={containerRef}
         className="editor-container"
@@ -92,9 +89,7 @@ eval(user_input)
       >
         {/* Code Editor Section */}
         <div style={{ width: `${editorWidth}%` }}>
-          {/* Full Scan Button */}
           <ScanButton onScan={handleFullScan} />
-
           <CodeEditor code={code} setCode={setCode} />
         </div>
 
@@ -117,8 +112,10 @@ eval(user_input)
             overflowY: "auto",
           }}
         >
-          {/* Currently still passing realtime findings */}
-          <FindingsPanel findings={realtimeFindings} />
+          <FindingsPanel
+            findings={realtimeFindings}
+            fullScanFindings={fullScanFindings}
+          />
         </div>
       </main>
     </>
