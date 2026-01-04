@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import CodeEditor from "./components/CodeEditor";
 import FindingsPanel from "./components/FindingsPanel";
+import ScanButton from "./components/ScanButton";
 import { runRealtimeAnalysis } from "./analysis/runRealtimeAnalysis";
+import { runFullScan } from "./analysis/runFullScan";
 import { debounce } from "./utils/debounce";
 import "./App.css";
 
@@ -12,20 +14,20 @@ eval(user_input)
 `);
 
   const [realtimeFindings, setRealtimeFindings] = useState([]);
+  const [fullScanFindings, setFullScanFindings] = useState([]);
 
   // ---- RESIZE STATE ----
   const containerRef = useRef(null);
   const isDraggingRef = useRef(false);
   const [editorWidth, setEditorWidth] = useState(75); // %
 
-  // ---- DEBOUNCED ANALYSIS ----
+  // ---- DEBOUNCED REALTIME ANALYSIS ----
   const debouncedAnalysis = useMemo(
     () =>
       debounce((code) => {
         const results = runRealtimeAnalysis(code);
         setRealtimeFindings(results);
         console.log("🔎 Realtime Analysis Findings:", results);
-
       }, 500),
     []
   );
@@ -33,6 +35,13 @@ eval(user_input)
   useEffect(() => {
     debouncedAnalysis(code);
   }, [code, debouncedAnalysis]);
+
+  // ---- FULL SCAN HANDLER ----
+  const handleFullScan = () => {
+    const results = runFullScan(code);
+    setFullScanFindings(results);
+    console.log("🧪 Full Scan Findings:", results);
+  };
 
   // ---- MOUSE HANDLERS ----
   const onMouseDown = () => {
@@ -81,8 +90,11 @@ eval(user_input)
           userSelect: isDraggingRef.current ? "none" : "auto",
         }}
       >
-        {/* Code Editor */}
+        {/* Code Editor Section */}
         <div style={{ width: `${editorWidth}%` }}>
+          {/* Full Scan Button */}
+          <ScanButton onScan={handleFullScan} />
+
           <CodeEditor code={code} setCode={setCode} />
         </div>
 
@@ -105,6 +117,7 @@ eval(user_input)
             overflowY: "auto",
           }}
         >
+          {/* Currently still passing realtime findings */}
           <FindingsPanel findings={realtimeFindings} />
         </div>
       </main>
