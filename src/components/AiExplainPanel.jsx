@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { explainIssueWithAI } from "../ai/explainWithAI";
 
-const DEFAULT_WIDTH = 440; // slightly larger than FindingsPanel
+const DEFAULT_WIDTH = 440;
 const MIN_WIDTH = DEFAULT_WIDTH;
 
 const AiExplainPanel = ({ issue, onClose }) => {
@@ -12,14 +12,44 @@ const AiExplainPanel = ({ issue, onClose }) => {
 
   const isResizingRef = useRef(false);
 
-  // Reset width when panel opens (important!)
+  // 🔑 Reset width when panel opens
   useEffect(() => {
     if (issue) {
       setWidth(DEFAULT_WIDTH);
+      setResponse("");
+      setError("");
+      setLoading(false);
     }
   }, [issue]);
 
-  if (!issue) return null;
+  // ---- RESIZE HANDLERS ----
+  const onMouseDown = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    isResizingRef.current = true;
+  };
+
+  const onMouseMove = (e) => {
+    if (!isResizingRef.current) return;
+
+    const newWidth = window.innerWidth - e.clientX;
+    if (newWidth >= MIN_WIDTH) {
+      setWidth(newWidth);
+    }
+  };
+
+  const onMouseUp = () => {
+    isResizingRef.current = false;
+  };
+
+  useEffect(() => {
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, []);
 
   const runAI = async (type) => {
     if (!window.__AI_API_KEY__) {
@@ -47,34 +77,8 @@ const AiExplainPanel = ({ issue, onClose }) => {
     }
   };
 
-  // ---- RESIZE HANDLERS ----
-  const onMouseDown = (e) => {
-    e.preventDefault();
-    e.stopPropagation(); // 🔑 prevents FindingsPanel resize conflict
-    isResizingRef.current = true;
-  };
-
-  const onMouseMove = (e) => {
-    if (!isResizingRef.current) return;
-
-    const newWidth = window.innerWidth - e.clientX;
-    if (newWidth >= MIN_WIDTH) {
-      setWidth(newWidth);
-    }
-  };
-
-  const onMouseUp = () => {
-    isResizingRef.current = false;
-  };
-
-  useEffect(() => {
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-    };
-  }, []);
+  // ✅ CONDITIONAL RENDERING (SAFE)
+  if (!issue) return null;
 
   return (
     <div
