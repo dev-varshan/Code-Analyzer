@@ -1,10 +1,23 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { explainIssueWithAI } from "../ai/explainWithAI";
+
+const DEFAULT_WIDTH = 440; // slightly larger than FindingsPanel
+const MIN_WIDTH = DEFAULT_WIDTH;
 
 const AiExplainPanel = ({ issue, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState("");
   const [error, setError] = useState("");
+  const [width, setWidth] = useState(DEFAULT_WIDTH);
+
+  const isResizingRef = useRef(false);
+
+  // Reset width when panel opens (important!)
+  useEffect(() => {
+    if (issue) {
+      setWidth(DEFAULT_WIDTH);
+    }
+  }, [issue]);
 
   if (!issue) return null;
 
@@ -34,6 +47,35 @@ const AiExplainPanel = ({ issue, onClose }) => {
     }
   };
 
+  // ---- RESIZE HANDLERS ----
+  const onMouseDown = (e) => {
+    e.preventDefault();
+    e.stopPropagation(); // 🔑 prevents FindingsPanel resize conflict
+    isResizingRef.current = true;
+  };
+
+  const onMouseMove = (e) => {
+    if (!isResizingRef.current) return;
+
+    const newWidth = window.innerWidth - e.clientX;
+    if (newWidth >= MIN_WIDTH) {
+      setWidth(newWidth);
+    }
+  };
+
+  const onMouseUp = () => {
+    isResizingRef.current = false;
+  };
+
+  useEffect(() => {
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, []);
+
   return (
     <div
       style={{
@@ -41,23 +83,49 @@ const AiExplainPanel = ({ issue, onClose }) => {
         right: 0,
         top: 0,
         height: "100vh",
-        width: "380px",
+        width: `${width}px`,
         background: "#111",
         borderLeft: "1px solid #333",
         zIndex: 999,
         padding: "16px",
         overflowY: "auto",
+        overflowX: "hidden",
+        boxSizing: "border-box",
       }}
     >
+      {/* RESIZE HANDLE */}
+      <div
+        onMouseDown={onMouseDown}
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          width: "6px",
+          height: "100%",
+          cursor: "col-resize",
+          zIndex: 1000,
+        }}
+      />
+
+      {/* HEADER */}
       <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <h3>🤖 AI Security Explanation</h3>
+        <h3 style={{ margin: 0 }}>🤖 AI Security Explanation</h3>
         <button onClick={onClose} style={closeBtn}>✕</button>
       </div>
 
-      <div style={{ fontSize: "13px", color: "#aaa", marginBottom: "12px" }}>
+      {/* ISSUE META */}
+      <div
+        style={{
+          fontSize: "13px",
+          color: "#aaa",
+          marginBottom: "12px",
+          marginTop: "6px",
+        }}
+      >
         {issue.name} • Line {issue.line}
       </div>
 
+      {/* ACTION BUTTONS */}
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         <button onClick={() => runAI("WHY_INSECURE")} style={btnStyle}>
           Why is this insecure?
@@ -76,11 +144,25 @@ const AiExplainPanel = ({ issue, onClose }) => {
         </button>
       </div>
 
-      <div style={{ marginTop: "14px", fontSize: "13px" }}>
+      {/* AI RESPONSE */}
+      <div
+        style={{
+          marginTop: "14px",
+          fontSize: "13px",
+          wordBreak: "break-word",
+          overflowWrap: "anywhere",
+        }}
+      >
         {loading && <span style={{ color: "#1890ff" }}>Thinking...</span>}
         {error && <span style={{ color: "#ff4d4f" }}>{error}</span>}
         {response && (
-          <pre style={{ whiteSpace: "pre-wrap", color: "#ddd" }}>
+          <pre
+            style={{
+              whiteSpace: "pre-wrap",
+              color: "#ddd",
+              marginTop: "8px",
+            }}
+          >
             {response}
           </pre>
         )}
