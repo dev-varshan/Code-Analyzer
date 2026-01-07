@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { explainIssueWithAI } from "../ai/explainWithAI";
 
 const DEFAULT_WIDTH = 440;
@@ -12,8 +12,8 @@ const AiExplainPanel = ({ issue, onClose }) => {
 
   const isResizingRef = useRef(false);
 
-  // 🔑 Reset width when panel opens
-  useEffect(() => {
+  // 🔑 Reset width BEFORE paint (prevents flicker)
+  useLayoutEffect(() => {
     if (issue) {
       setWidth(DEFAULT_WIDTH);
       setResponse("");
@@ -77,7 +77,7 @@ const AiExplainPanel = ({ issue, onClose }) => {
     }
   };
 
-  // ✅ CONDITIONAL RENDERING (SAFE)
+  // Safe conditional render (hooks already executed)
   if (!issue) return null;
 
   return (
