@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import CodeEditor from "./components/CodeEditor";
 import FindingsPanel from "./components/FindingsPanel";
 import ScanButton from "./components/ScanButton";
+import ApiKeyModal from "./components/ApiKeyModal";
 import { runRealtimeAnalysis } from "./analysis/runRealtimeAnalysis";
 import { runFullScan } from "./analysis/runFullScan";
 import { debounce } from "./utils/debounce";
@@ -16,10 +17,14 @@ eval(user_input)
   const [realtimeFindings, setRealtimeFindings] = useState([]);
   const [fullScanFindings, setFullScanFindings] = useState([]);
 
+  // 🔑 AI API KEY (BYOK)
+  const [apiKey, setApiKey] = useState(null);
+  const [showApiModal, setShowApiModal] = useState(false);
+
   // ---- RESIZE STATE ----
   const containerRef = useRef(null);
   const isDraggingRef = useRef(false);
-  const [editorWidth, setEditorWidth] = useState(75); // %
+  const [editorWidth, setEditorWidth] = useState(75);
 
   // ---- DEBOUNCED REALTIME ANALYSIS ----
   const debouncedAnalysis = useMemo(
@@ -27,7 +32,6 @@ eval(user_input)
       debounce((code) => {
         const results = runRealtimeAnalysis(code);
         setRealtimeFindings(results);
-        console.log("🔎 Realtime Analysis Findings:", results);
       }, 500),
     []
   );
@@ -40,7 +44,6 @@ eval(user_input)
   const handleFullScan = () => {
     const results = runFullScan(code);
     setFullScanFindings(results);
-    console.log("🧪 Full Scan Findings:", results);
   };
 
   // ---- MOUSE HANDLERS ----
@@ -50,10 +53,8 @@ eval(user_input)
 
   const onMouseMove = (e) => {
     if (!isDraggingRef.current || !containerRef.current) return;
-
     const rect = containerRef.current.getBoundingClientRect();
     const newEditorWidth = ((e.clientX - rect.left) / rect.width) * 100;
-
     if (newEditorWidth > 40 && newEditorWidth < 85) {
       setEditorWidth(newEditorWidth);
     }
@@ -71,11 +72,32 @@ eval(user_input)
       window.removeEventListener("mouseup", onMouseUp);
     };
   }, []);
+  window.__AI_API_KEY__ = apiKey;
+window.__FULL_CODE__ = code;
+
 
   return (
     <>
       <header className="app-header">
         <h2 className="app-title">Secure Python Code Analyzer</h2>
+
+        {/* 🔑 AI KEY BUTTON */}
+        <button
+          onClick={() => setShowApiModal(true)}
+          style={{
+            marginLeft: "auto",
+            marginRight: "16px",
+            background: apiKey ? "#52c41a" : "#333",
+            color: "#fff",
+            border: "none",
+            padding: "6px 12px",
+            borderRadius: "4px",
+            cursor: "pointer",
+            fontSize: "13px",
+          }}
+        >
+          {apiKey ? "AI Key Added" : "Add AI Key"}
+        </button>
       </header>
 
       <main
@@ -87,13 +109,11 @@ eval(user_input)
           userSelect: isDraggingRef.current ? "none" : "auto",
         }}
       >
-        {/* Code Editor Section */}
         <div style={{ width: `${editorWidth}%` }}>
           <ScanButton onScan={handleFullScan} />
           <CodeEditor code={code} setCode={setCode} />
         </div>
 
-        {/* RESIZER BAR */}
         <div
           onMouseDown={onMouseDown}
           style={{
@@ -103,7 +123,6 @@ eval(user_input)
           }}
         />
 
-        {/* Findings Panel */}
         <div
           style={{
             width: `${100 - editorWidth}%`,
@@ -118,6 +137,13 @@ eval(user_input)
           />
         </div>
       </main>
+
+      {/* 🔑 API KEY MODAL */}
+      <ApiKeyModal
+        isOpen={showApiModal}
+        onClose={() => setShowApiModal(false)}
+        onSave={(key) => setApiKey(key)}
+      />
     </>
   );
 }
