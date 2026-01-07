@@ -1,4 +1,5 @@
 import { useState } from "react";
+import AiExplainPanel from "./AiExplainPanel";
 
 const severityColor = {
   High: "#ff4d4f",
@@ -8,12 +9,11 @@ const severityColor = {
 
 const FindingsPanel = ({ findings, fullScanFindings }) => {
   const [activeTab, setActiveTab] = useState("realtime");
+  const [selectedIssue, setSelectedIssue] = useState(null);
 
-  // 🔑 Deduplicate full scan results: same rule + same line only once
   const uniqueFullScanFindings = fullScanFindings.filter(
     (item, index, self) =>
-      index ===
-      self.findIndex(
+      index === self.findIndex(
         (f) => f.ruleId === item.ruleId && f.line === item.line
       )
   );
@@ -55,7 +55,7 @@ const FindingsPanel = ({ findings, fullScanFindings }) => {
         </div>
       </div>
 
-      {/* REAL-TIME TAB */}
+      {/* REAL-TIME TAB (UNCHANGED) */}
       {activeTab === "realtime" && (
         <>
           {!findings.length ? (
@@ -63,34 +63,26 @@ const FindingsPanel = ({ findings, fullScanFindings }) => {
               ✅ No security issues detected
             </div>
           ) : (
-            <div>
-              <h3 style={{ marginBottom: "10px" }}>
-                ⚠️ Real-Time Security Warnings
-              </h3>
-
-              {findings.map((item, index) => (
-                <div
-                  key={index}
-                  style={{
-                    borderLeft: `4px solid ${severityColor[item.severity]}`,
-                    padding: "8px",
-                    marginBottom: "8px",
-                    background: "#1e1e1e",
-                    wordBreak: "break-word",
-                    overflowWrap: "anywhere",
-                  }}
-                >
-                  <strong style={{ color: severityColor[item.severity] }}>
-                    {item.severity}
-                  </strong>{" "}
-                  — {item.name}
-                  <br />
-                  <small style={{ color: "#aaa" }}>
-                    Line {item.line}: {item.code}
-                  </small>
-                </div>
-              ))}
-            </div>
+            findings.map((item, index) => (
+              <div
+                key={index}
+                style={{
+                  borderLeft: `4px solid ${severityColor[item.severity]}`,
+                  padding: "8px",
+                  marginBottom: "8px",
+                  background: "#1e1e1e",
+                }}
+              >
+                <strong style={{ color: severityColor[item.severity] }}>
+                  {item.severity}
+                </strong>{" "}
+                — {item.name}
+                <br />
+                <small style={{ color: "#aaa" }}>
+                  Line {item.line}: {item.code}
+                </small>
+              </div>
+            ))
           )}
         </>
       )}
@@ -103,45 +95,59 @@ const FindingsPanel = ({ findings, fullScanFindings }) => {
               🔍 Run a full scan to see detailed security analysis results.
             </div>
           ) : (
-            <div>
-              <h3 style={{ marginBottom: "10px" }}>
-                🧪 Full Scan Security Findings
-              </h3>
-
-              {uniqueFullScanFindings.map((item, index) => (
-                <div
-                  key={index}
+            uniqueFullScanFindings.map((item, index) => (
+              <div
+                key={index}
+                style={{
+                  borderLeft: `4px solid ${severityColor[item.severity]}`,
+                  padding: "8px",
+                  marginBottom: "8px",
+                  background: "#1e1e1e",
+                }}
+              >
+                <strong style={{ color: severityColor[item.severity] }}>
+                  {item.severity}
+                </strong>{" "}
+                — {item.name}
+                <br />
+                <small style={{ color: "#aaa" }}>
+                  OWASP: {item.owasp}
+                </small>
+                <br />
+                <small style={{ color: "#aaa" }}>
+                  Line {item.line}: {item.code}
+                </small>
+                <br />
+                <small style={{ color: "#9cdcfe" }}>
+                  Fix: {item.recommendation}
+                </small>
+                <br />
+                <button
+                  onClick={() => setSelectedIssue(item)}
                   style={{
-                    borderLeft: `4px solid ${severityColor[item.severity]}`,
-                    padding: "8px",
-                    marginBottom: "8px",
-                    background: "#1e1e1e",
-                    wordBreak: "break-word",
-                    overflowWrap: "anywhere",
+                    marginTop: "6px",
+                    background: "#1890ff",
+                    border: "none",
+                    color: "#fff",
+                    padding: "4px 8px",
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    fontSize: "12px",
                   }}
                 >
-                  <strong style={{ color: severityColor[item.severity] }}>
-                    {item.severity}
-                  </strong>{" "}
-                  — {item.name}
-                  <br />
-                  <small style={{ color: "#aaa" }}>
-                    OWASP: {item.owasp}
-                  </small>
-                  <br />
-                  <small style={{ color: "#aaa" }}>
-                    Line {item.line}: {item.code}
-                  </small>
-                  <br />
-                  <small style={{ color: "#9cdcfe" }}>
-                    Fix: {item.recommendation}
-                  </small>
-                </div>
-              ))}
-            </div>
+                  🤖 AI Explain
+                </button>
+              </div>
+            ))
           )}
         </>
       )}
+
+      {/* AI SIDE PANEL */}
+      <AiExplainPanel
+        issue={selectedIssue}
+        onClose={() => setSelectedIssue(null)}
+      />
     </div>
   );
 };
