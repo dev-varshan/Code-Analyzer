@@ -7,7 +7,7 @@ const severityColor = {
   Low: "#52c41a",
 };
 
-const FindingsPanel = ({ findings, fullScanFindings }) => {
+const FindingsPanel = ({ findings, fullScanFindings, onSelectLine }) => {
   const [activeTab, setActiveTab] = useState("realtime");
   const [selectedIssue, setSelectedIssue] = useState(null);
 
@@ -18,9 +18,23 @@ const FindingsPanel = ({ findings, fullScanFindings }) => {
       )
   );
 
+  const renderCard = (item, children) => (
+    <div
+      onClick={() => onSelectLine?.(item.line)}
+      style={{
+        borderLeft: `4px solid ${severityColor[item.severity]}`,
+        padding: "8px",
+        marginBottom: "8px",
+        background: "#1e1e1e",
+        cursor: "pointer",
+      }}
+    >
+      {children}
+    </div>
+  );
+
   return (
     <div style={{ padding: "10px", height: "100%" }}>
-      {/* Tabs */}
       <div style={{ display: "flex", marginBottom: "10px" }}>
         <div
           onClick={() => setActiveTab("realtime")}
@@ -55,24 +69,11 @@ const FindingsPanel = ({ findings, fullScanFindings }) => {
         </div>
       </div>
 
-      {/* REAL-TIME TAB (UNCHANGED) */}
-      {activeTab === "realtime" && (
-        <>
-          {!findings.length ? (
-            <div style={{ padding: "10px", color: "#999" }}>
-              ✅ No security issues detected
-            </div>
-          ) : (
-            findings.map((item, index) => (
-              <div
-                key={index}
-                style={{
-                  borderLeft: `4px solid ${severityColor[item.severity]}`,
-                  padding: "8px",
-                  marginBottom: "8px",
-                  background: "#1e1e1e",
-                }}
-              >
+      {activeTab === "realtime" &&
+        (findings.length ? (
+          findings.map((item, index) =>
+            renderCard(item, (
+              <>
                 <strong style={{ color: severityColor[item.severity] }}>
                   {item.severity}
                 </strong>{" "}
@@ -81,30 +82,20 @@ const FindingsPanel = ({ findings, fullScanFindings }) => {
                 <small style={{ color: "#aaa" }}>
                   Line {item.line}: {item.code}
                 </small>
-              </div>
+              </>
             ))
-          )}
-        </>
-      )}
+          )
+        ) : (
+          <div style={{ padding: "10px", color: "#999" }}>
+            ✅ No security issues detected
+          </div>
+        ))}
 
-      {/* FULL SCAN TAB */}
-      {activeTab === "fullscan" && (
-        <>
-          {!uniqueFullScanFindings.length ? (
-            <div style={{ padding: "10px", color: "#777" }}>
-              🔍 Run a full scan to see detailed security analysis results.
-            </div>
-          ) : (
-            uniqueFullScanFindings.map((item, index) => (
-              <div
-                key={index}
-                style={{
-                  borderLeft: `4px solid ${severityColor[item.severity]}`,
-                  padding: "8px",
-                  marginBottom: "8px",
-                  background: "#1e1e1e",
-                }}
-              >
+      {activeTab === "fullscan" &&
+        (uniqueFullScanFindings.length ? (
+          uniqueFullScanFindings.map((item, index) =>
+            renderCard(item, (
+              <>
                 <strong style={{ color: severityColor[item.severity] }}>
                   {item.severity}
                 </strong>{" "}
@@ -123,7 +114,10 @@ const FindingsPanel = ({ findings, fullScanFindings }) => {
                 </small>
                 <br />
                 <button
-                  onClick={() => setSelectedIssue(item)}
+                  onClick={(e) => {
+                    e.stopPropagation(); // 🔑 prevent line click
+                    setSelectedIssue(item);
+                  }}
                   style={{
                     marginTop: "6px",
                     background: "#1890ff",
@@ -137,13 +131,15 @@ const FindingsPanel = ({ findings, fullScanFindings }) => {
                 >
                   🤖 AI Explain
                 </button>
-              </div>
+              </>
             ))
-          )}
-        </>
-      )}
+          )
+        ) : (
+          <div style={{ padding: "10px", color: "#777" }}>
+            🔍 Run a full scan to see detailed security analysis results.
+          </div>
+        ))}
 
-      {/* AI SIDE PANEL */}
       <AiExplainPanel
         issue={selectedIssue}
         onClose={() => setSelectedIssue(null)}
