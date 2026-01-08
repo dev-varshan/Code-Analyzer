@@ -35,3 +35,9 @@
   position: relative;
   overflow: hidden;
 }
+
+/* Monaco line highlight for vulnerability navigation */
+.monaco-editor .monaco-line-highlight {
+  background-color: rgba(255, 77, 79, 0.18) !important; /* red-ish */
+  border-left: 3px solid #ff4d4f;
+}
