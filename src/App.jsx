@@ -21,6 +21,9 @@ eval(user_input)
   const [apiKey, setApiKey] = useState(null);
   const [showApiModal, setShowApiModal] = useState(false);
 
+  // 🟡 LINE HIGHLIGHT STATE
+  const [highlightLine, setHighlightLine] = useState(null);
+
   // ---- RESIZE STATE ----
   const containerRef = useRef(null);
   const isDraggingRef = useRef(false);
@@ -72,16 +75,15 @@ eval(user_input)
       window.removeEventListener("mouseup", onMouseUp);
     };
   }, []);
-  window.__AI_API_KEY__ = apiKey;
-window.__FULL_CODE__ = code;
 
+  window.__AI_API_KEY__ = apiKey;
+  window.__FULL_CODE__ = code;
 
   return (
     <>
       <header className="app-header">
         <h2 className="app-title">Secure Python Code Analyzer</h2>
 
-        {/* 🔑 AI KEY BUTTON */}
         <button
           onClick={() => setShowApiModal(true)}
           style={{
@@ -111,7 +113,11 @@ window.__FULL_CODE__ = code;
       >
         <div style={{ width: `${editorWidth}%` }}>
           <ScanButton onScan={handleFullScan} />
-          <CodeEditor code={code} setCode={setCode} />
+          <CodeEditor
+            code={code}
+            setCode={setCode}
+            highlightLine={highlightLine}
+          />
         </div>
 
         <div
@@ -134,11 +140,11 @@ window.__FULL_CODE__ = code;
           <FindingsPanel
             findings={realtimeFindings}
             fullScanFindings={fullScanFindings}
+            onSelectLine={(line) => setHighlightLine(line)}
           />
         </div>
       </main>
 
-      {/* 🔑 API KEY MODAL */}
       <ApiKeyModal
         isOpen={showApiModal}
         onClose={() => setShowApiModal(false)}
