@@ -1,9 +1,12 @@
 import { useEffect, useRef } from "react";
 import Editor from "@monaco-editor/react";
 
+const HIGHLIGHT_TIMEOUT = 2000; // 2 seconds
+
 const CodeEditor = ({ code, setCode, highlightLine }) => {
   const editorRef = useRef(null);
   const decorationRef = useRef([]);
+  const timeoutRef = useRef(null);
 
   const handleEditorMount = (editor) => {
     editorRef.current = editor;
@@ -14,10 +17,15 @@ const CodeEditor = ({ code, setCode, highlightLine }) => {
 
     const editor = editorRef.current;
 
+    // Clear any previous timeout
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
     // Scroll to line
     editor.revealLineInCenter(highlightLine);
 
-    // Highlight line
+    // Apply highlight
     decorationRef.current = editor.deltaDecorations(
       decorationRef.current,
       [
@@ -35,6 +43,21 @@ const CodeEditor = ({ code, setCode, highlightLine }) => {
         },
       ]
     );
+
+    // Auto-remove highlight after timeout
+    timeoutRef.current = setTimeout(() => {
+      decorationRef.current = editor.deltaDecorations(
+        decorationRef.current,
+        []
+      );
+    }, HIGHLIGHT_TIMEOUT);
+
+    // Cleanup on unmount or next highlight
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
   }, [highlightLine]);
 
   return (

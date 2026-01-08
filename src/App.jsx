@@ -140,7 +140,8 @@ eval(user_input)
           <FindingsPanel
             findings={realtimeFindings}
             fullScanFindings={fullScanFindings}
-            onSelectLine={(line) => setHighlightLine(line)}
+            onSelectLine={(line) => { setHighlightLine(null);
+              setTimeout(() => setHighlightLine(line), 0);}}
           />
         </div>
       </main>
