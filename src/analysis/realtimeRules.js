@@ -85,7 +85,7 @@ export const realtimeRules = [
     id: "PY_HARDCODED_PASSWORD",
     name: "Hardcoded Password",
     severity: "Medium",
-    pattern: /password\s*=\s*["'][^"']+["']/i,
+    pattern: /\bpassword\s*=\s*["'][^"']{3,}["']/i,
     message: "Hardcoded passwords are insecure."
   },
   {
@@ -142,7 +142,7 @@ export const realtimeRules = [
     id: "PY_HTTP_URL",
     name: "Insecure HTTP Usage",
     severity: "Medium",
-    pattern: /http:\/\//i,
+    pattern: /["']http:\/\/[^"']+["']/i,
     message: "Using HTTP instead of HTTPS exposes data in transit."
   },
   {
@@ -218,7 +218,7 @@ export const realtimeRules = [
     message: "assert statements can be removed with optimizations and should not be used for security checks."
   },
 
-    // =========================
+  // =========================
   // SQL / DATABASE MISUSE
   // =========================
   {
@@ -243,7 +243,7 @@ export const realtimeRules = [
     id: "PY_RAW_INPUT_USAGE",
     name: "Unvalidated User Input",
     severity: "Medium",
-    pattern: /\b(input|sys\.argv)\b/,
+    pattern: /\binput\s*\(/,
     message: "User input is used without validation or sanitization."
   },
   {
