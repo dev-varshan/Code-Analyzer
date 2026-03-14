@@ -212,10 +212,12 @@ export const realtimeRules = [
   // =========================
   {
     id: "PY_ASSERT",
-    name: "Use of assert for Validation",
+    name: "Use of assert for Security Validation",
     severity: "Low",
-    pattern: /\bassert\s+/,
-    message: "assert statements can be removed with optimizations and should not be used for security checks."
+    // Only flag when assert is used alongside auth/security keywords,
+    // not every assert (which would be noisy in test code).
+    pattern: /\bassert\s+.*(auth|permission|admin|login|token|password|role|access)/i,
+    message: "assert statements are removed with -O optimizations and should not be used for security checks."
   },
 
   // =========================
@@ -382,6 +384,79 @@ export const realtimeRules = [
     severity: "Medium",
     pattern: /\bos\.chmod\s*\(/,
     message: "Changing file permissions improperly can expose sensitive files."
+  },
+
+  // =========================
+  // ADDITIONAL DESERIALIZATION
+  // =========================
+  {
+    id: "PY_MARSHAL_LOADS",
+    name: "Unsafe marshal Deserialization",
+    severity: "High",
+    pattern: /\bmarshal\.loads?\s*\(/,
+    message: "marshal.loads() can execute arbitrary code when deserializing untrusted data."
+  },
+  {
+    id: "PY_SHELVE_OPEN",
+    name: "Unsafe shelve Usage",
+    severity: "Medium",
+    pattern: /\bshelve\.open\s*\(/,
+    message: "shelve is backed by pickle internally and is unsafe with untrusted data sources."
+  },
+
+  // =========================
+  // DYNAMIC IMPORT / REFLECTION
+  // =========================
+  {
+    id: "PY_DYNAMIC_IMPORT",
+    name: "Dynamic Module Import",
+    severity: "High",
+    pattern: /\b__import__\s*\(/,
+    message: "__import__() with user-controlled input can load and execute arbitrary modules."
+  },
+
+  // =========================
+  // DJANGO ORM RAW SQL
+  // =========================
+  {
+    id: "PY_DJANGO_RAW_SQL",
+    name: "Django Raw SQL Execution",
+    severity: "High",
+    pattern: /\.(?:raw|extra)\s*\(/,
+    message: "Django's .raw() and .extra() bypass ORM protections and can lead to SQL injection."
+  },
+
+  // =========================
+  // TEMPLATE ENGINE MISCONFIG
+  // =========================
+  {
+    id: "PY_JINJA2_AUTOESCAPE_OFF",
+    name: "Jinja2 Autoescaping Disabled",
+    severity: "High",
+    pattern: /autoescape\s*=\s*False/,
+    message: "Disabling Jinja2 autoescaping allows Cross-Site Scripting (XSS) in rendered templates."
+  },
+
+  // =========================
+  // INSECURE PROTOCOL
+  // =========================
+  {
+    id: "PY_XMLRPC",
+    name: "XML-RPC Usage",
+    severity: "Medium",
+    pattern: /\b(xmlrpc|SimpleXMLRPCServer|MultiPathXMLRPCServer)\b/,
+    message: "XML-RPC can be vulnerable to XML injection and lacks modern security controls."
+  },
+
+  // =========================
+  // WEAK KEY SIZE
+  // =========================
+  {
+    id: "PY_WEAK_RSA_KEY",
+    name: "Weak RSA Key Size",
+    severity: "High",
+    pattern: /RSA\.generate\s*\(\s*(512|1024)\b/,
+    message: "RSA keys smaller than 2048 bits are considered cryptographically weak."
   }
 
 ];
