@@ -140,6 +140,20 @@ export function extractTaintedVariables(codeLines) {
         }
       }
 
+      // 1b. Nested taint source: e.g. data = json.loads(request.body)
+      //     The right-hand side contains a taint source inside a function call.
+      const nestedSourceMatch = line.match(/^(\w+)\s*=\s*(.+)$/);
+      if (nestedSourceMatch) {
+        const [, leftVar, rhs] = nestedSourceMatch;
+        if (!taintedVars.has(leftVar)) {
+          const rhsContainsTaintSource = TAINT_SOURCES.some((src) => rhs.includes(src));
+          if (rhsContainsTaintSource) {
+            taintedVars.add(leftVar);
+            foundNew = true;
+          }
+        }
+      }
+
       // 2. Detect variable assignments
       const assignmentMatch = line.match(/^(\w+)\s*=\s*(.+)$/);
       if (assignmentMatch) {
@@ -199,6 +213,20 @@ export function extractTaintedVariables(codeLines) {
               foundNew = true;
             }
           });
+        }
+      }
+
+      // 5b. Augmented assignment taint propagation: query += user_input
+      //     If right side of += / -= / *= contains a tainted var, left side becomes tainted.
+      const augAssignMatch = line.match(/^(\w+)\s*[+\-*]=[\s]*(.+)$/);
+      if (augAssignMatch) {
+        const [, leftVar, rhs] = augAssignMatch;
+        if (!taintedVars.has(leftVar)) {
+          const rhsTainted = [...taintedVars].some((tv) => rhs.includes(tv));
+          if (rhsTainted) {
+            taintedVars.add(leftVar);
+            foundNew = true;
+          }
         }
       }
 
@@ -299,8 +327,9 @@ export function findSinkUsage(codeLines, sinks) {
 
     sinks.forEach((sink) => {
       // More precise sink detection
-      // Check for the sink as a function call or method
-      const sinkPattern = new RegExp(`\\b${sink.replace('.', '\\.')}\\s*\\(`);
+      // Check for the sink as a function call or method.
+      // Use /\./g (global) to replace ALL dots, not just the first one.
+      const sinkPattern = new RegExp(`\\b${sink.replace(/\./g, '\\.')}\\s*\\(`);
       const match = sinkPattern.exec(line);
 
       if (match) {
