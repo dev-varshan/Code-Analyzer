@@ -1,8 +1,50 @@
 import { realtimeRules } from "./realtimeRules";
 
 /**
- * Helper function to detect if a line is a comment or inside a string literal
- * This reduces false positives from pattern matching
+ * Strip the inline comment portion of a line (text after an unquoted #).
+ * e.g.  x = 1  # eval() is bad   →  x = 1
+ * This prevents pattern matches firing on comment text.
+ */
+function stripInlineComment(line) {
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+  let escaped = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (char === "\\") {
+      escaped = true;
+      continue;
+    }
+
+    if (char === '"' && !inSingleQuote) {
+      inDoubleQuote = !inDoubleQuote;
+      continue;
+    }
+
+    if (char === "'" && !inDoubleQuote) {
+      inSingleQuote = !inSingleQuote;
+      continue;
+    }
+
+    // Unquoted # → everything from here is a comment
+    if (char === "#" && !inSingleQuote && !inDoubleQuote) {
+      return line.substring(0, i).trimEnd();
+    }
+  }
+
+  return line;
+}
+
+/**
+ * Helper function to detect if a line is a comment or inside a string literal.
+ * This reduces false positives from pattern matching.
  */
 function isCommentOrStringContext(line) {
   const trimmed = line.trim();
@@ -10,7 +52,7 @@ function isCommentOrStringContext(line) {
   // Skip empty lines
   if (!trimmed) return true;
 
-  // Skip comment lines
+  // Skip full-line comment
   if (trimmed.startsWith("#")) return true;
 
   // Skip docstrings (triple quotes)
@@ -20,7 +62,7 @@ function isCommentOrStringContext(line) {
 }
 
 /**
- * Check if a pattern match is inside a string literal
+ * Check if a pattern match is inside a string literal.
  * This prevents false positives like: msg = "Use eval() carefully"
  */
 function isInsideString(line, matchIndex) {
@@ -36,7 +78,7 @@ function isInsideString(line, matchIndex) {
       continue;
     }
 
-    if (char === '\\') {
+    if (char === "\\") {
       escaped = true;
       continue;
     }
@@ -92,13 +134,17 @@ export function runRealtimeAnalysis(code) {
       return;
     }
 
-    // Skip comments and empty lines
+    // Skip full-line comments and empty lines
     if (isCommentOrStringContext(line)) {
       return;
     }
 
+    // Strip inline comment before pattern matching to avoid false positives
+    // e.g. `x = 1  # eval() is dangerous` should NOT trigger PY_EVAL
+    const lineForMatching = stripInlineComment(line);
+
     realtimeRules.forEach((rule) => {
-      const match = rule.pattern.exec(line);
+      const match = rule.pattern.exec(lineForMatching);
 
       if (match) {
         const lineNumber = index + 1;
@@ -111,7 +157,7 @@ export function runRealtimeAnalysis(code) {
 
         // Check if match is inside a string literal
         const matchIndex = match.index;
-        if (isInsideString(line, matchIndex)) {
+        if (isInsideString(lineForMatching, matchIndex)) {
           return;
         }
 
@@ -123,7 +169,7 @@ export function runRealtimeAnalysis(code) {
           severity: rule.severity,
           message: rule.message,
           line: lineNumber,
-          code: line.trim()
+          code: line.trim(), // show original line (with comment) to user
         });
       }
     });
