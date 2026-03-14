@@ -106,7 +106,33 @@ export function extractTaintedVariables(codeLines) {
       }
 
       // 1. Detect direct user input sources
-      if (line.includes("input(") || line.includes("sys.argv")) {
+      //    — original: input(), sys.argv
+      //    — added:    Flask request sources, Django request sources, env vars
+      const TAINT_SOURCES = [
+        "input(",
+        "sys.argv",
+        // Flask web request sources
+        "request.args",
+        "request.form",
+        "request.json",
+        "request.get_json(",
+        "request.data",
+        "request.values",
+        "request.cookies",
+        "request.headers",
+        "request.files",
+        // Django web request sources
+        "request.GET",
+        "request.POST",
+        "request.body",
+        "request.META",
+        // Environment variable sources (can carry secrets or attacker-controlled data)
+        "os.environ.get(",
+        "os.getenv(",
+      ];
+
+      const isTaintSource = TAINT_SOURCES.some((src) => line.includes(src));
+      if (isTaintSource) {
         const variable = line.split("=")[0]?.trim();
         if (variable && !taintedVars.has(variable)) {
           taintedVars.add(variable);
