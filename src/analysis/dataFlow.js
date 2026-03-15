@@ -271,6 +271,45 @@ export function extractTaintedVariables(codeLines) {
           foundNew = true;
         }
       }
+
+      // 8. Method chain propagation: name = user_input.strip().lower()
+      //    If the object a method is called on is tainted, the result is also tainted.
+      //    Pattern: var = tainted.someMethod(...)
+      const methodChainMatch = line.match(/^(\w+)\s*=\s*(\w+)\.\w+\s*\(/);
+      if (methodChainMatch) {
+        const [, leftVar, sourceVar] = methodChainMatch;
+        if (!taintedVars.has(leftVar) && taintedVars.has(sourceVar)) {
+          taintedVars.add(leftVar);
+          foundNew = true;
+        }
+      }
+
+      // 9. Dict / index read propagation: val = data["key"] where data is tainted
+      //    Pattern: var = tainted["key"] or var = tainted[0]
+      const indexReadMatch = line.match(/^(\w+)\s*=\s*(\w+)\s*\[.+\]/);
+      if (indexReadMatch) {
+        const [, leftVar, sourceVar] = indexReadMatch;
+        if (!taintedVars.has(leftVar) && taintedVars.has(sourceVar)) {
+          taintedVars.add(leftVar);
+          foundNew = true;
+        }
+      }
+
+      // 10. Type coercion propagation: x = str(user_input) / int(user_input) / repr(user_input)
+      //     Casting tainted data does NOT sanitize it — result is still tainted.
+      const TYPE_COERCIONS = ["str", "int", "float", "bytes", "repr", "list", "tuple", "set"];
+      const coercionMatch = line.match(/^(\w+)\s*=\s*(\w+)\s*\(\s*(\w+)\s*\)/);
+      if (coercionMatch) {
+        const [, leftVar, funcName, argVar] = coercionMatch;
+        if (
+          !taintedVars.has(leftVar) &&
+          TYPE_COERCIONS.includes(funcName) &&
+          taintedVars.has(argVar)
+        ) {
+          taintedVars.add(leftVar);
+          foundNew = true;
+        }
+      }
     });
 
     // Stop if no new tainted variables found

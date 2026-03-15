@@ -457,6 +457,155 @@ export const realtimeRules = [
     severity: "High",
     pattern: /RSA\.generate\s*\(\s*(512|1024)\b/,
     message: "RSA keys smaller than 2048 bits are considered cryptographically weak."
+  },
+
+  // =========================
+  // SUBPROCESS VARIANTS
+  // =========================
+  {
+    id: "PY_SUBPROCESS_GETOUTPUT",
+    name: "subprocess.getoutput() Usage",
+    severity: "High",
+    pattern: /\bsubprocess\.(getoutput|getstatusoutput)\s*\(/,
+    message: "subprocess.getoutput() and getstatusoutput() invoke a shell by default and are vulnerable to command injection."
+  },
+  {
+    id: "PY_SUBPROCESS_CHECK_OUTPUT_SHELL",
+    name: "subprocess.check_output with shell=True",
+    severity: "High",
+    pattern: /\bsubprocess\.check_output\s*\(.*shell\s*=\s*True/i,
+    message: "subprocess.check_output() with shell=True enables command injection via user-controlled input."
+  },
+
+  // =========================
+  // HASHLIB WEAK HASHING
+  // =========================
+  {
+    id: "PY_HASHLIB_MD5",
+    name: "Weak Hash: hashlib.md5()",
+    severity: "Medium",
+    pattern: /\bhashlib\.md5\s*\(/,
+    message: "MD5 is cryptographically broken. Use hashlib.sha256() or stronger for security-sensitive hashing."
+  },
+  {
+    id: "PY_HASHLIB_SHA1",
+    name: "Weak Hash: hashlib.sha1()",
+    severity: "Medium",
+    pattern: /\bhashlib\.sha1\s*\(/,
+    message: "SHA-1 is cryptographically weak. Use hashlib.sha256() or stronger."
+  },
+
+  // =========================
+  // SSL / TLS MISCONFIGURATION
+  // =========================
+  {
+    id: "PY_SSL_CERT_NONE",
+    name: "SSL Certificate Verification Disabled",
+    severity: "High",
+    pattern: /ssl\.CERT_NONE/,
+    message: "Setting ssl.CERT_NONE disables certificate verification, making connections vulnerable to MITM attacks."
+  },
+  {
+    id: "PY_SSL_WRAP_SOCKET_NO_CERT",
+    name: "ssl.wrap_socket Without Certificate Verification",
+    severity: "High",
+    pattern: /\bssl\.wrap_socket\s*\((?!.*cert_reqs)/,
+    message: "ssl.wrap_socket() without cert_reqs=ssl.CERT_REQUIRED does not verify server identity."
+  },
+
+  // =========================
+  // HARDCODED SECRETS / KEYS
+  // =========================
+  {
+    id: "PY_DJANGO_SECRET_KEY",
+    name: "Hardcoded Django SECRET_KEY",
+    severity: "High",
+    pattern: /SECRET_KEY\s*=\s*["'][^"']{8,}["']/,
+    message: "Hardcoded Django SECRET_KEY in source code. Use environment variables instead."
+  },
+  {
+    id: "PY_FLASK_SECRET_KEY",
+    name: "Hardcoded Flask secret_key",
+    severity: "High",
+    pattern: /\bapp\.secret_key\s*=\s*["'][^"']+["']/,
+    message: "Hardcoded Flask app.secret_key is insecure. Load from environment variables."
+  },
+
+  // =========================
+  // EXEC FILE PATTERN
+  // =========================
+  {
+    id: "PY_EXEC_OPEN",
+    name: "exec() of Opened File",
+    severity: "High",
+    pattern: /\bexec\s*\(\s*open\s*\(/,
+    message: "exec(open(...).read()) executes file contents as code. This is dangerous with unvalidated file paths."
+  },
+
+  // =========================
+  // SSH / PARAMIKO
+  // =========================
+  {
+    id: "PY_PARAMIKO_AUTO_ADD",
+    name: "Paramiko AutoAddPolicy (SSH MITM Risk)",
+    severity: "High",
+    pattern: /AutoAddPolicy\s*\(/,
+    message: "AutoAddPolicy automatically accepts unknown SSH host keys, leaving connections vulnerable to MITM attacks."
+  },
+
+  // =========================
+  // SQL PERCENT FORMATTING
+  // =========================
+  {
+    id: "PY_SQL_PERCENT_FORMAT",
+    name: "SQL Query Built with % Formatting",
+    severity: "High",
+    pattern: /\.execute\s*\(.*%[^,)]/,
+    message: "Building SQL queries with % string formatting allows SQL injection. Use parameterized queries."
+  },
+
+  // =========================
+  // NETWORK EXPOSURE
+  // =========================
+  {
+    id: "PY_BIND_ALL_INTERFACES",
+    name: "Service Bound to All Interfaces",
+    severity: "Medium",
+    pattern: /host\s*=\s*["']0\.0\.0\.0["']/,
+    message: "Binding to 0.0.0.0 exposes the service on all network interfaces including public ones."
+  },
+
+  // =========================
+  // XML EXTERNAL ENTITY (XXE)
+  // =========================
+  {
+    id: "PY_LXML_PARSE",
+    name: "lxml XML Parsing (XXE Risk)",
+    severity: "High",
+    pattern: /\blxml\.etree\.(parse|fromstring|XML)\s*\(/,
+    message: "lxml.etree parsing may be vulnerable to XXE attacks. Use defusedxml or disable external entity loading."
+  },
+
+  // =========================
+  // CORS MISCONFIGURATION
+  // =========================
+  {
+    id: "PY_CORS_WILDCARD",
+    name: "CORS Wildcard Origin Allowed",
+    severity: "Medium",
+    pattern: /origins\s*=\s*["']\*["']/,
+    message: "Allowing all CORS origins (*) exposes the API to cross-origin requests from any website."
+  },
+
+  // =========================
+  // WEAK BCRYPT ROUNDS
+  // =========================
+  {
+    id: "PY_WEAK_BCRYPT_ROUNDS",
+    name: "Weak bcrypt Work Factor",
+    severity: "Medium",
+    pattern: /gensalt\s*\(\s*rounds\s*=\s*([1-9]|10)\b/,
+    message: "bcrypt work factor (rounds) below 12 is too weak for production use. Use rounds=12 or higher."
   }
 
 ];

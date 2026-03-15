@@ -7,7 +7,7 @@ export const scanRules = [
     name: "SQL Injection",
     severity: "High",
     owasp: "A03: Injection",
-    sinks: ["execute", "executemany"],
+    sinks: ["execute", "executemany", "cursor.callproc"],
     message:
       "Untrusted input reaches a SQL execution function without sanitization.",
     recommendation:
@@ -18,7 +18,7 @@ export const scanRules = [
     name: "Command Injection",
     severity: "High",
     owasp: "A03: Injection",
-    sinks: ["os.system", "subprocess.call", "subprocess.run", "subprocess.Popen"],
+    sinks: ["os.system", "subprocess.call", "subprocess.run", "subprocess.Popen", "subprocess.getoutput", "subprocess.getstatusoutput", "subprocess.check_output"],
     message:
       "User input is passed to system command execution functions.",
     recommendation:
